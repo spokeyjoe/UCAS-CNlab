@@ -15,8 +15,8 @@ int main() {
     pthread_t pthrd;
 
     while (1) {
-        listen_on_port(HTTP_PORT);
-        if (pthread_create(&pthrd, NULL, listen_on_port, HTTPS_PORT) != 0) {
+        listen_on_port(HTTPS_PORT);
+        if (pthread_create(&pthrd, NULL, listen_on_port, HTTP_PORT) != 0) {
             perror("Fail to create thread");
             exit(1);
         }
@@ -50,6 +50,7 @@ void listen_on_port(int port) {
         perror("Binding failed");
         exit(1);
     }
+    printf("Binding succeed!");
     listen(sock, 128);
     printf("Listening on port %d...\n", port);
     while (1) {
@@ -60,6 +61,7 @@ void listen_on_port(int port) {
             perror("Accept failed");
             exit(1);
         }
+        printf("Connection accepted!\n");
         handle_https_request(csock, port);
     }
     return 0;
@@ -68,9 +70,6 @@ void listen_on_port(int port) {
 void handle_https_request(int sock, int port) {
     char request_buf[LEN_REQUEST_BUF] = {0};
     char response_buf[LEN_RESPONSE_BUF] = {0};
-
-    char method[20];
-    char filename[100];
 
     int response_len;
     int request_len;
@@ -82,6 +81,7 @@ void handle_https_request(int sock, int port) {
 		perror("Receive request failed");
 		exit(1);
 	} else {
+        printf("Request received!\n");
         if (port == HTTP_PORT) {
             response_len = get_response(response_buf, MOVED_PERMANENTLY, 0, NULL);
             send(sock, response_buf, response_len, 0);
@@ -90,6 +90,7 @@ void handle_https_request(int sock, int port) {
         // parse request
         char* method = strtok(request_buf, " ");
         char* filepath = strtok(NULL, " ");
+        printf("Request method: %s\n", method);
         printf("Getting file: %s\n", filepath);
 
         // 200 OK
@@ -100,7 +101,7 @@ void handle_https_request(int sock, int port) {
             send(sock, response_buf, response_len + num_chars, 0);
         } else {
             response_len = get_response(response_buf, NOT_FOUND, 0, NULL);
-            send(sock, response_buf, response_len, 0)
+            send(sock, response_buf, response_len, 0);
         }
     }
 }

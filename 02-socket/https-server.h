@@ -23,5 +23,9 @@ const char* code2message(int code) {
             return "MOVED PERMANENTLY";
         case 404:
             return "NOT FOUND";
+        default:
+            return "UNDEFINED CODE";
     }
 }
+
+#endif
