@@ -8,32 +8,11 @@
 #include <netinet/in.h>
 #include <resolv.h>
 #include <pthread.h>
-#include "openssl/ssl.h"
-#include "openssl/err.h"
 #include "https-server.h"
 
 
 int main() {
     pthread_t pthrd;
-
-    // init SSL Library
-	SSL_library_init();
-	OpenSSL_add_all_algorithms();
-	SSL_load_error_strings();
-
-	// enable TLS method
-	const SSL_METHOD *method = TLS_server_method();
-	SSL_CTX *ctx = SSL_CTX_new(method);
-
-	// load certificate and private key
-	if (SSL_CTX_use_certificate_file(ctx, "./keys/cnlab.cert", SSL_FILETYPE_PEM) <= 0) {
-		perror("Fail to load certificate");
-		exit(1);
-	}
-	if (SSL_CTX_use_PrivateKey_file(ctx, "./keys/cnlab.prikey", SSL_FILETYPE_PEM) <= 0) {
-		perror("Fail to load private key");
-		exit(1);
-	}
 
     while (1) {
         listen_on_port(HTTP_PORT);
@@ -81,18 +60,12 @@ void listen_on_port(int port) {
             perror("Accept failed");
             exit(1);
         }
-        SSL *ssl = SSL_new(ctx);
-        SSL_set_fd(ssl, csock);
-        handle_https_request(ssl, port);
+        handle_https_request(csock, port);
     }
-
-    close(sock);
-    SSL_CTX_free(ctx);
-
     return 0;
 }
 
-void handle_https_request(SSL* ssl, int port) {
+void handle_https_request(int sock, int port) {
     char request_buf[LEN_REQUEST_BUF] = {0};
     char response_buf[LEN_RESPONSE_BUF] = {0};
 
@@ -100,23 +73,18 @@ void handle_https_request(SSL* ssl, int port) {
     char filename[100];
 
     int response_len;
+    int request_len;
+    int num_chars;
 
     FILE* fp = NULL;
 
-    if (SSL_accept(ssl) == -1){
-		perror("SSL_accept failed");
+    if ((request_len = recv(sock, request_buf, LEN_REQUEST_BUF, 0)) <= 0){
+		perror("Receive request failed");
 		exit(1);
 	} else {
-        // read from SSL to request buffer
-        int bytes = SSL_read(ssl, request_buf, sizeof(request_buf));
-        if (bytes < 0) {
-            perror("SSL_read failed");
-            exit(1);
-        }
-        
         if (port == HTTP_PORT) {
             response_len = get_response(response_buf, MOVED_PERMANENTLY, 0, NULL);
-            SSL_write(ssl, response_buf, strlen(response_buf));
+            send(sock, response_buf, response_len, 0);
         }
 
         // parse request
@@ -129,11 +97,10 @@ void handle_https_request(SSL* ssl, int port) {
             num_chars = count_file_chars(fp);
             response_len = get_response(response_buf, OK, num_chars, NULL);
             fread(response_buf + response_len, sizeof(char), num_chars, fp);
-
-            SSL_write(ssl, response_buf, strlen(response_buf));
+            send(sock, response_buf, response_len + num_chars, 0);
         } else {
             response_len = get_response(response_buf, NOT_FOUND, 0, NULL);
-            SSL_write(ssl, response_buf, strlen(response_buf));
+            send(sock, response_buf, response_len, 0)
         }
     }
 }
