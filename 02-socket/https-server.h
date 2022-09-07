@@ -43,7 +43,7 @@ typedef struct Request {
     char *body;
 } Request;
 
-void* listen(void* port_num);
+void* listen_port(void* port_num);
 void handle_https_request(SSL* ssl, int port);
 void send_response(int code, struct Request* req, FILE* fp, SSL* ssl);
 

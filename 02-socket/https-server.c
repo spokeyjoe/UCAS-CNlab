@@ -10,13 +10,13 @@ int main() {
         perror("Create thread failed");
         exit(1);
     }
-    listen(&https_port);
+    listen_port(&https_port);
     pthread_detach(t);
 }
 
 /* Start a socket and listen on port PORT_NUM,
 handle HTTP requests. */
-void* listen(void* port_num) {
+void* listen_port(void* port_num) {
     int port = (int)*port_num   // TODO: *((int*)port_num) ?
 
     // init SSL Library
@@ -124,73 +124,51 @@ void handle_https_request(SSL* ssl, int port) {
 
     // Generate response
     int partial = 0;
+    int response_len = 0;
     if (port == HTTP_PORT) {
-        send_response(MOVED_PERMANENTLY, req, fp, ssl);
+        char response_buf[LEN_CONTENT_BUF];
+        char new_url[100];
+        strcpy(new_url, "https:");
+        response_len += sprintf(response_buf, "HTTP/1.1 %d %s\r\n", code, code2message(code));
+        response_len += sprintf(response_buf + response_len, "Location: %s\r\n", strcat(new_url, req -> url));
+        SSL_write(ssl, response_buf, response_len);
     } else if ((fp = fopen(url, "r")) == NULL) {
-        send_response(NOT_FOUND, req, fp, ssl);
+        char response_buf[LEN_CONTENT_BUF];
+        response_len += sprintf(response_buf, "HTTP/1.1 %d %s\r\n", code, code2message(code));
+        SSL_write(ssl, response_buf, response_len);
     } else {
+        file_len = get_file_len(fp);
         struct Header* h;
+        int start = 0;
+        int end = file_len; 
+        char str_range[15];
+        strcpy(str_range, "Range");
         for (h = req -> headers; h; h = h -> next) {
-            if (h -> name == "Range") {
+            if (strcmp(h -> name, str_range) == 0) {
                 partial = 1;
+                sscanf(h -> value, "bytes=%d-%d", &start, &end);
                 break();
             }
         }
         if (partial == 1) {
-            send_response(PARTIAL_CONTENT, req, fp, ssl);
+            int read_len = end - start;
+            fseek(fp, start, SEEK_SET);
+            char response_buf[LEN_CONTENT_BUF];
+            response_len += sprintf(response_buf, "HTTP/1.1 %d %s\r\n", code, code2message(code));
+            fread(response_buf + response_len, sizeof(char), read_len, fp);
+            response_len += read_len;
+            SSL_write(ssl, response_buf, response_len);
         } else {
-            send_response(OK, req, fp, ssl);
-        }
-    }
-
-    int sock = SSL_get_fd(ssl);
-    SSL_free(ssl);
-    close(sock);
-}
-
-/* Generate response according to status code CODE, 
-request REQ, file FP, and send it using ssl SSL. */
-void send_response(int code, struct Request* req, FILE* fp, SSL* ssl) {
-    int response_len = 0;
-    switch (code) {
-        case OK:
-            int file_len = get_file_len(fp);
             char response_buf[LEN_CONTENT_BUF + file_len];
             response_len += sprintf(response_buf, "HTTP/1.1 %d %s\r\n", code, code2message(code));
             response_len += sprintf(response_buf + response_len, "Content-length: %d\r\n", file_len);
             fread(response_buf + response_len, sizeof(char), file_len, fp);
             response_len += file_len;
             SSL_write(ssl, response_buf, response_len);
-        case NOT_FOUND:
-            char response_buf[LEN_CONTENT_BUF];
-            response_len += sprintf(response_buf, "HTTP/1.1 %d %s\r\n", code, code2message(code));
-            SSL_write(ssl, response_buf, response_len);
-        case MOVED_PERMANENTLY:
-            char response_buf[LEN_CONTENT_BUF];
-            char new_url[100];
-            strcpy(new_url, "https:");
-            response_len += sprintf(response_buf, "HTTP/1.1 %d %s\r\n", code, code2message(code));
-            response_len += sprintf(response_buf + response_len, "Location: %s\r\n", strcat(new_url, req -> url));
-            SSL_write(ssl, response_buf, response_len);
-        case PARTIAL_CONTENT:
-            // set fp as start of partition
-            int file_len = get_file_len(fp);
-            int start = 0;
-            int end = file_len;
-            struct Header* h;
-            for (h = req -> headers; h; h = h -> next) {
-                if (h -> name == "Range") {
-                    sscanf(h -> value, "bytes=%d-%d", start, end);
-                    break;
-                }
-            }
-            int read_len = end - start;
-            fseek(fp, start, SEEK_SET);
-
-            char response_buf[LEN_CONTENT_BUF];
-            response_len += sprintf(response_buf, "HTTP/1.1 %d %s\r\n", code, code2message(code));
-            fread(response_buf + response_len, sizeof(char), read_len);
-            response_len += read_len;
-            SSL_write(ssl, response_buf, response_len);
+        }
     }
+
+    int sock = SSL_get_fd(ssl);
+    SSL_free(ssl);
+    close(sock);
 }
