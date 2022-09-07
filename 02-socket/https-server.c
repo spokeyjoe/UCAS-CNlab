@@ -6,7 +6,7 @@ int main() {
     int https_port = HTTPS_PORT;
     int http_port = HTTP_PORT;
 
-    if (pthread_create(&t, NULL, listen, &http_port) != 0) {
+    if (pthread_create(&t, NULL, listen_port, &http_port) != 0) {
         perror("Create thread failed");
         exit(1);
     }
@@ -17,7 +17,7 @@ int main() {
 /* Start a socket and listen on port PORT_NUM,
 handle HTTP requests. */
 void* listen_port(void* port_num) {
-    int port = (int)*port_num   // TODO: *((int*)port_num) ?
+    int port = *((int*)port_num);
 
     // init SSL Library
 	SSL_library_init();
@@ -88,15 +88,13 @@ Use PORT to identify requests from 80. */
 void handle_https_request(SSL* ssl, int port) {
     // alloc request buffer
     char request_buf[LEN_CONTENT_BUF];
-
     int request_len;
-    int response_len;
 
     if (SSL_accept(ssl) == -1) {
         perror("SSL accept failed\n");
         exit(1);
     }
-    pritnf("SSL accept succeed! (port %d)\n", port);
+    printf("SSL accept succeed! (port %d)\n", port);
 
     // read request into buffer
     request_len = SSL_read(ssl, request_buf, LEN_CONTENT_BUF);
@@ -122,10 +120,12 @@ void handle_https_request(SSL* ssl, int port) {
 
 
 
-    // Generate response
+    // generate response and send
     int partial = 0;
     int response_len = 0;
+    int code;
     if (port == HTTP_PORT) {
+        code = MOVED_PERMANENTLY;
         char response_buf[LEN_CONTENT_BUF];
         char new_url[100];
         strcpy(new_url, "https:");
@@ -133,6 +133,7 @@ void handle_https_request(SSL* ssl, int port) {
         response_len += sprintf(response_buf + response_len, "Location: %s\r\n", strcat(new_url, req -> url));
         SSL_write(ssl, response_buf, response_len);
     } else if ((fp = fopen(url, "r")) == NULL) {
+        code = NOT_FOUND;
         char response_buf[LEN_CONTENT_BUF];
         response_len += sprintf(response_buf, "HTTP/1.1 %d %s\r\n", code, code2message(code));
         SSL_write(ssl, response_buf, response_len);
@@ -151,6 +152,7 @@ void handle_https_request(SSL* ssl, int port) {
             }
         }
         if (partial == 1) {
+            code = PARTIAL_CONTENT;
             int read_len = end - start;
             fseek(fp, start, SEEK_SET);
             char response_buf[LEN_CONTENT_BUF];
@@ -159,6 +161,7 @@ void handle_https_request(SSL* ssl, int port) {
             response_len += read_len;
             SSL_write(ssl, response_buf, response_len);
         } else {
+            code = OK;
             char response_buf[LEN_CONTENT_BUF + file_len];
             response_len += sprintf(response_buf, "HTTP/1.1 %d %s\r\n", code, code2message(code));
             response_len += sprintf(response_buf + response_len, "Content-length: %d\r\n", file_len);
