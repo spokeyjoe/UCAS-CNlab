@@ -124,6 +124,8 @@ void handle_https_request(SSL* ssl, int port) {
     int partial = 0;
     int response_len = 0;
     int code;
+    FILE* fp;
+
     if (port == HTTP_PORT) {
         code = MOVED_PERMANENTLY;
         char response_buf[LEN_CONTENT_BUF];
@@ -132,13 +134,13 @@ void handle_https_request(SSL* ssl, int port) {
         response_len += sprintf(response_buf, "HTTP/1.1 %d %s\r\n", code, code2message(code));
         response_len += sprintf(response_buf + response_len, "Location: %s\r\n", strcat(new_url, req -> url));
         SSL_write(ssl, response_buf, response_len);
-    } else if ((fp = fopen(url, "r")) == NULL) {
+    } else if ((fp = fopen(req -> url, "r")) == NULL) {
         code = NOT_FOUND;
         char response_buf[LEN_CONTENT_BUF];
         response_len += sprintf(response_buf, "HTTP/1.1 %d %s\r\n", code, code2message(code));
         SSL_write(ssl, response_buf, response_len);
     } else {
-        file_len = get_file_len(fp);
+        int file_len = get_file_len(fp);
         struct Header* h;
         int start = 0;
         int end = file_len; 
@@ -148,7 +150,7 @@ void handle_https_request(SSL* ssl, int port) {
             if (strcmp(h -> name, str_range) == 0) {
                 partial = 1;
                 sscanf(h -> value, "bytes=%d-%d", &start, &end);
-                break();
+                break;
             }
         }
         if (partial == 1) {
