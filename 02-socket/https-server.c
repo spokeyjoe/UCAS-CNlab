@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <resolv.h>
 #include <pthread.h>
+#include <stdlib.h>
 #include "https-server.h"
 
 
@@ -15,8 +16,8 @@ int main() {
     pthread_t pthrd;
 
     while (1) {
-        listen_on_port(HTTPS_PORT);
-        if (pthread_create(&pthrd, NULL, listen_on_port, HTTP_PORT) != 0) {
+        listen_on_port((void*)HTTPS_PORT);
+        if (pthread_create(&pthrd, NULL, listen_on_port, (void *)HTTP_PORT) != 0) {
             perror("Fail to create thread");
             exit(1);
         }
@@ -25,7 +26,8 @@ int main() {
 }
 
 /* Start a socket and listen on port PORT. */
-void listen_on_port(int port) {
+void* listen_on_port(void* port_num) {
+    int port = (int)port_num;
     // init socket
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
@@ -64,7 +66,6 @@ void listen_on_port(int port) {
         printf("Connection accepted!\n");
         handle_https_request(csock, port);
     }
-    return 0;
 }
 
 void handle_https_request(int sock, int port) {
