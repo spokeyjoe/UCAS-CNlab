@@ -1,3 +1,7 @@
+#include "openssl/ssl.h"
+#include "openssl/err.h"
+
+
 #ifndef HTTPS_SERVER_H
 #define HTTPS_SERVER_H
 
@@ -10,10 +14,10 @@
 #define NOT_FOUND         404
 
 #define LEN_REQUEST_BUF   1024
-#define LEN_RESPONSE_BUF  1024
+#define LEN_RESPONSE_BUF_HEADER  1024
 
 void* listen_on_port(void* port_num);
-void handle_https_request(int sock, int port);
+void handle_https_request(SSL* ssl, int port);
 int count_file_chars(FILE* fp);
 int get_response(char response_buf[], int code, int length, char* http_url);
 
