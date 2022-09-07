@@ -92,13 +92,6 @@ void handle_https_request(SSL* ssl, int port) {
     int request_len;
     int response_len;
 
-    char method[10];
-    char url[100];
-    char version[10];
-    // TODO: is it elegant?
-    char field_names[10][20];
-    char field_values[10][100];
-
     if (SSL_accept(ssl) == -1) {
         perror("SSL accept failed\n");
         exit(1);
@@ -113,47 +106,91 @@ void handle_https_request(SSL* ssl, int port) {
     }
     printf("Request received!\n");
 
-    // TODO: parse request into fields
+    // parse request
+    struct Request* req = parse_request(request_buf);
+
+    printf("[DEBUG] Method: %d\n", req -> method);
+    printf("[DEBUG] URL: %s\n", req -> url);
+    printf("[DEBUG] HTTP-version: %s\n", req -> version);
+    printf("[DEBUG] Headers:\n");
+    struct Header *h;
+    for (h=req->headers; h; h=h->next) {
+        printf("%32s: %s\n", h->name, h->value);
+    }
+    puts("[DEBUG] message-body:");
+    puts(req->body);
+
 
 
     // Generate response
-    // 301
+    int partial = 0;
     if (port == HTTP_PORT) {
-        char response_buf[LEN_CONTENT_BUF];
-        response_len = get_response(response_buf, MOVED_PERMANENTLY, length, url);
-        SSL_write(ssl, response_buf, response_len);
-    } else if ((fp = fopen(url, "r")) != NULL) {
-        
-
-
-
-
-
-        int file_len = get_file_len(fp);
-        char response_buf[LEN_CONTENT_BUF + file_len];
-        response_len = get_response(response_buf, OK, file_len, NULL);
+        send_response(MOVED_PERMANENTLY, req, fp, ssl);
+    } else if ((fp = fopen(url, "r")) == NULL) {
+        send_response(NOT_FOUND, req, fp, ssl);
+    } else {
+        struct Header* h;
+        for (h = req -> headers; h; h = h -> next) {
+            if (h -> name == "Range") {
+                partial = 1;
+                break();
+            }
+        }
+        if (partial == 1) {
+            send_response(PARTIAL_CONTENT, req, fp, ssl);
+        } else {
+            send_response(OK, req, fp, ssl);
+        }
     }
+
+    int sock = SSL_get_fd(ssl);
+    SSL_free(ssl);
+    close(sock);
 }
 
-/* Generate HTTP response according to status code CODE
-and content LENGTH. For port 80 requests, generate new HTTPS URL from URL. 
+/* Generate response according to status code CODE, 
+request REQ, file FP, and send it using ssl SSL. */
+void send_response(int code, struct Request* req, FILE* fp, SSL* ssl) {
+    int response_len = 0;
+    switch (code) {
+        case OK:
+            int file_len = get_file_len(fp);
+            char response_buf[LEN_CONTENT_BUF + file_len];
+            response_len += sprintf(response_buf, "HTTP/1.1 %d %s\r\n", code, code2message(code));
+            response_len += sprintf(response_buf + response_len, "Content-length: %d\r\n", file_len);
+            fread(response_buf + response_len, sizeof(char), file_len, fp);
+            response_len += file_len;
+            SSL_write(ssl, response_buf, response_len);
+        case NOT_FOUND:
+            char response_buf[LEN_CONTENT_BUF];
+            response_len += sprintf(response_buf, "HTTP/1.1 %d %s\r\n", code, code2message(code));
+            SSL_write(ssl, response_buf, response_len);
+        case MOVED_PERMANENTLY:
+            char response_buf[LEN_CONTENT_BUF];
+            char new_url[100];
+            strcpy(new_url, "https:");
+            response_len += sprintf(response_buf, "HTTP/1.1 %d %s\r\n", code, code2message(code));
+            response_len += sprintf(response_buf + response_len, "Location: %s\r\n", strcat(new_url, req -> url));
+            SSL_write(ssl, response_buf, response_len);
+        case PARTIAL_CONTENT:
+            // set fp as start of partition
+            int file_len = get_file_len(fp);
+            int start = 0;
+            int end = file_len;
+            struct Header* h;
+            for (h = req -> headers; h; h = h -> next) {
+                if (h -> name == "Range") {
+                    sscanf(h -> value, "bytes=%d-%d", start, end);
+                    break;
+                }
+            }
+            int read_len = end - start;
+            fseek(fp, start, SEEK_SET);
 
-Return response length. */
-int get_response(char* response_buf, int code, int length, char* url) {
-    int len = 0;
-    len += sprintf(response_buf, "HTTP/1.1 %d %s\r\n", code, code2message(code));
-    if (code == OK) {
-        len += sprintf(response_buf + len, "Content-length: %d\r\n", length);
-    } else if (code == MOVED_PERMANENTLY) {
-        char new_url[100];
-        strcpy(new_url, "https:");
-        len += sprintf(response_buf + len, "Location: %s\r\n", strcat(new_url, url))
+            char response_buf[LEN_CONTENT_BUF];
+            response_len += sprintf(response_buf, "HTTP/1.1 %d %s\r\n", code, code2message(code));
+            fread(response_buf + response_len, sizeof(char), read_len);
+            response_len += read_len;
+            SSL_write(ssl, response_buf, response_len);
     }
-}
-
-/* Cound file length. */
-int get_file_len(FILE* fp) {
-    // TODO
-    fseek(fp, 0L, SEEK_END);
-    return ftell(fp);
 }

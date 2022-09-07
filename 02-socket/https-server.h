@@ -27,12 +27,14 @@
 
 typedef enum Method {UNSUPPORTED, GET, HEAD} Method;
 
+/* Structure for HTTP header. */
 typedef struct Header {
     char *name;
     char *value;
     struct Header *next;
 } Header;
 
+/* Structure for HTTP request. */
 typedef struct Request {
     enum Method method;
     char *url;
@@ -41,9 +43,14 @@ typedef struct Request {
     char *body;
 } Request;
 
+void* listen(void* port_num);
+void handle_https_request(SSL* ssl, int port);
+void send_response(int code, struct Request* req, FILE* fp, SSL* ssl);
+
 struct Request* parse_request(const char* raw_requset);
 void free_header(struct Header* header);
 void free_request(struct Request *request);
 const char* code2message(int code);
+int get_file_len(FILE* fp);
 
 #endif
