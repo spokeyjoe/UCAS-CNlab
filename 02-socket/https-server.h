@@ -19,6 +19,7 @@
 #define HTTPS_PORT 443
 
 #define LEN_CONTENT_BUF 512
+#define LEN_RESPONSE_BUF 81920
 
 #define OK                200
 #define MOVED_PERMANENTLY 301
@@ -44,9 +45,9 @@ typedef struct Request {
 } Request;
 
 void* listen_port(void* port_num);
+void handle_http_request(int sock, int port);
 void handle_https_request(SSL* ssl, int port);
-void send_response(int code, struct Request* req, FILE* fp, SSL* ssl);
-
+int get_response(char* request_buf, char* response_buf, int port);
 struct Request* parse_request(const char* raw_requset);
 void free_header(struct Header* header);
 void free_request(struct Request *request);

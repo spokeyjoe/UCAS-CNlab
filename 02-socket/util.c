@@ -89,5 +89,7 @@ const char* code2message(int code) {
 int get_file_len(FILE* fp) {
     // TODO
     fseek(fp, 0L, SEEK_END);
-    return ftell(fp);
+    int len = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+    return len;
 }
