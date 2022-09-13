@@ -57,7 +57,7 @@ if __name__ == '__main__':
     topo = BroadcastTopo()
     net = Mininet(topo = topo, link = TCLink, controller = None) 
 
-    h1, h2, b1, b2, b3 = net.get('h1', 'h2', 'h3', 'b1')
+    h1, h2, b1, b2, b3 = net.get('h1', 'h2', 'b1', 'b2', 'b3')
     h1.cmd('ifconfig h1-eth0 10.0.0.1/8')
     h2.cmd('ifconfig h2-eth0 10.0.0.2/8')
     clearIP(b1)
