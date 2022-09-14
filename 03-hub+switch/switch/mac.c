@@ -76,7 +76,6 @@ void insert_mac_port(u8 mac[ETH_ALEN], iface_info_t *iface)
 	list_add_head(&new_entry -> list, &mac_port_map.hash_table[mac_hash]);
 
 	pthread_mutex_unlock(&mac_port_map.lock);
-	return NULL;
 }
 
 
