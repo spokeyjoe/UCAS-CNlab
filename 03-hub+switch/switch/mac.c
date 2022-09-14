@@ -41,7 +41,7 @@ iface_info_t *lookup_port(u8 mac[ETH_ALEN])
 	u8 mac_hash = hash8((char*)mac, 8 * ETH_ALEN);
 	mac_port_entry_t *ptr = NULL;
 	pthread_mutex_lock(&mac_port_map.lock);
-	list_for_each_entry(ptr, mac_port_map.hash_table[mac_hash], list) {
+	list_for_each_entry(ptr, &mac_port_map.hash_table[mac_hash], list) {
 		if (memcmp(ptr -> mac, mac, 8 * ETH_ALEN)) {
 			pthread_mutex_unlock(&mac_port_map.lock);
 			return ptr -> iface;
@@ -73,13 +73,12 @@ void insert_mac_port(u8 mac[ETH_ALEN], iface_info_t *iface)
 	new_entry -> iface = iface;
 	memcpy(new_entry -> mac, mac, 8 * ETH_ALEN);
 	new_entry -> visited = time(NULL);
-	list_add_head(&new_entry -> list, &mac_port_map.hash_table[mac_hash])
+	list_add_head(&new_entry -> list, &mac_port_map.hash_table[mac_hash]);
 
 	pthread_mutex_unlock(&mac_port_map.lock);
 	return NULL;
 }
 
-}
 
 // dumping mac_port table
 void dump_mac_port_table()
@@ -112,7 +111,7 @@ int sweep_aged_mac_port_entry()
 		mac_port_entry_t *nxt = NULL;
 		list_for_each_entry_safe(ptr, nxt, &mac_port_map.hash_table[i], list) {
 			if (time(NULL) - ptr -> visited > MAC_PORT_TIMEOUT) {
-				list_delete_entry(ptr -> list);
+				list_delete_entry(&ptr -> list);
 				num_removed_entry += 1;
 				free(ptr);
 			}
