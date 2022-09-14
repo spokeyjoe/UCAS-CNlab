@@ -20,6 +20,7 @@
 void handle_packet(iface_info_t *iface, char *packet, int len)
 {
 	struct ether_header *eh = (struct ether_header *)packet;
+	log(DEBUG, "the src mac address is " ETHER_STRING ".\n", ETHER_FMT(eh->ether_shost));
 	log(DEBUG, "the dst mac address is " ETHER_STRING ".\n", ETHER_FMT(eh->ether_dhost));
 
 	iface_info_t *port = NULL;

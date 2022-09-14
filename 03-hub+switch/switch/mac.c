@@ -38,11 +38,11 @@ void destory_mac_port_table()
 // lookup the mac address in mac_port table
 iface_info_t *lookup_port(u8 mac[ETH_ALEN])
 {
-	u8 mac_hash = hash8((char*)mac, 8 * ETH_ALEN);
+	u8 mac_hash = hash8((char*)mac, ETH_ALEN);
 	mac_port_entry_t *ptr = NULL;
 	pthread_mutex_lock(&mac_port_map.lock);
 	list_for_each_entry(ptr, &mac_port_map.hash_table[mac_hash], list) {
-		if (memcmp(ptr -> mac, mac, 8 * ETH_ALEN)) {
+		if (memcmp(ptr -> mac, mac, ETH_ALEN) == 0) {
 			pthread_mutex_unlock(&mac_port_map.lock);
 			return ptr -> iface;
 		}
@@ -54,14 +54,14 @@ iface_info_t *lookup_port(u8 mac[ETH_ALEN])
 // insert the mac -> iface mapping into mac_port table
 void insert_mac_port(u8 mac[ETH_ALEN], iface_info_t *iface)
 {	
-	u8 mac_hash = hash8((char*)mac, 8 * ETH_ALEN);
+	u8 mac_hash = hash8((char*)mac, ETH_ALEN);
 	mac_port_entry_t *ptr = NULL;
 
 	pthread_mutex_lock(&mac_port_map.lock);
 
 	list_for_each_entry(ptr, &mac_port_map.hash_table[mac_hash], list) {
 		// hit
-		if (memcmp(ptr -> mac, mac, 8 * ETH_ALEN)) {
+		if (memcmp(ptr -> mac, mac, ETH_ALEN) == 0) {
 			ptr -> iface = iface;
 			ptr -> visited = time(NULL);
 			pthread_mutex_unlock(&mac_port_map.lock);
@@ -71,7 +71,7 @@ void insert_mac_port(u8 mac[ETH_ALEN], iface_info_t *iface)
 	// miss
 	mac_port_entry_t *new_entry = (mac_port_entry_t *)malloc(sizeof(mac_port_entry_t));
 	new_entry -> iface = iface;
-	memcpy(new_entry -> mac, mac, 8 * ETH_ALEN);
+	memcpy(new_entry -> mac, mac, ETH_ALEN);
 	new_entry -> visited = time(NULL);
 	list_add_head(&new_entry -> list, &mac_port_map.hash_table[mac_hash]);
 
