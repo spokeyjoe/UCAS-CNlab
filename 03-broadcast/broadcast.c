@@ -6,10 +6,10 @@ extern ustack_t *instance;
 // the memory of ``packet'' will be free'd in handle_packet().
 void broadcast_packet(iface_info_t *iface, const char *packet, int len)
 {
-	iface_info_t *node;
-	list_for_each_entry(node, &iface -> list, list) {
-		if (node != iface) {
-			iface_send_packet(node, packet, len);
+	iface_info_t *ptr;
+	list_for_each_entry(ptr, &instance->iface_list, list) {
+		if (ptr != iface) {
+			iface_send_packet(ptr, packet, len);
 		}
 	}
 }
