@@ -156,7 +156,7 @@ static void find_available_ifaces()
 	list_for_each_entry(iface, &instance->iface_list, list) {
 		sprintf(dev_names + strlen(dev_names), " %s", iface->name);
 	}
-	log(DEBUG, "find the following interfaces: %s.", dev_names);
+	// log(DEBUG, "find the following interfaces: %s.", dev_names);
 }
 
 void init_all_ifaces()

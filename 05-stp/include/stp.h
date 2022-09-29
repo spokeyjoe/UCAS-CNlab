@@ -50,10 +50,7 @@ void stp_init(struct list_head *iface_list);
 void stp_destroy();
 
 void stp_port_handle_packet(stp_port_t *, char *packet, int pkt_len);
-int stp_config_cmp(struct stp_config *config1, struct stp_config *config2);
-int stp_port_config_cmp(stp_port_t *p, struct stp_config *config2);
+void stp_port_set_config(stp_port_t *p, struct stp_config *config);
 int stp_port_cmp(stp_port_t *p1, stp_port_t *p2);
-struct stp_config *stp_get_config(stp_port_t *p);
-void stp_write_config(stp_port_t *p, struct stp_config *config);
-
+int stp_port_config_cmp(stp_port_t *p, struct stp_config *config);
 #endif

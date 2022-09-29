@@ -1,0 +1,10 @@
+DEBUG: received SIGTERM, terminate this program.
+INFO: this switch is root.
+INFO: port id: 01, role: DESIGNATED.
+INFO: 	designated ->root: 0101, ->switch: 0101, ->port: 01, ->cost: 0.
+INFO: port id: 02, role: DESIGNATED.
+INFO: 	designated ->root: 0101, ->switch: 0101, ->port: 02, ->cost: 0.
+INFO: port id: 03, role: DESIGNATED.
+INFO: 	designated ->root: 0101, ->switch: 0101, ->port: 03, ->cost: 0.
+INFO: port id: 04, role: DESIGNATED.
+INFO: 	designated ->root: 0101, ->switch: 0101, ->port: 04, ->cost: 0.

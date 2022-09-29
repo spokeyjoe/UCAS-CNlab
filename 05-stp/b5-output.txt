@@ -1,0 +1,10 @@
+DEBUG: Neighbor port has higher priority
+DEBUG: Update node status:
+RP: 01
+ROOT: 0101
+COST:1
+
+DEBUG: received SIGTERM, terminate this program.
+INFO: non-root switch, designated root: 0101, root path cost: 1.
+INFO: port id: 01, role: ROOT.
+INFO: 	designated ->root: 0101, ->switch: 0101, ->port: 03, ->cost: 0.
