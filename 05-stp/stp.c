@@ -240,7 +240,7 @@ struct stp_config* stp_get_config(stp_port_t *p) {
 	config.hello_time = htons(STP_HELLO_TIME);
 	config.fwd_delay = htons(STP_FWD_DELAY);
 
-	return (stp_config*)(&config);
+	return (struct stp_config*)(&config);
 }
 
 /* Write config CONFIG into port P. */
