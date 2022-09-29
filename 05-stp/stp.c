@@ -147,7 +147,7 @@ static void stp_handle_config_packet(stp_t *stp, stp_port_t *p,
 		stp_write_config(p, config);
 
 		// reselect RP
-		stp_port_t *tmp = stp->roo;
+		stp_port_t *tmp = stp->root_port;
 		for (int i = 0; i < stp->nports; i++) {
 			stp_port_t *tp = &stp->ports[i];
 			if (!stp_port_is_designated(tp) && (stp_port_cmp(tp, tmp) > 0)) {
@@ -184,7 +184,7 @@ If config1 > config2, return value > 0.
 If config1 = config2, return 0.
 If config1 < config2, return value < 0. 
 */
-static int stp_config_cmp(struct stp_config *config1, struct stp_config *config2)
+int stp_config_cmp(struct stp_config *config1, struct stp_config *config2)
 {
 
     // We use unsigned type (as "large" as u64) in comparison, 
@@ -211,18 +211,18 @@ static int stp_config_cmp(struct stp_config *config1, struct stp_config *config2
 
 /* Compare priority of (the config of) port P & CONFIG. 
 Similar to stp_config_cmp(). */
-static int stp_port_config_cmp(stp_port_t *p, struct stp_config *config2) {
-    stp_config *config1 = stp_get_config(p);
+int stp_port_config_cmp(stp_port_t *p, struct stp_config *config2) {
+    struct stp_config *config1 = stp_get_config(p);
 	return stp_config_cmp(config1, config2);
 }
 
 /* Compare priority of (the config of) port P1 & P2. */
-static int stp_port_cmp(stp_port_t *p1, stp_port_t *p2) {
+int stp_port_cmp(stp_port_t *p1, stp_port_t *p2) {
 	return stp_config_cmp(stp_get_config(p1), stp_get_config(p2));
 }
 
 /* Output config from port P. */
-static struct stp_config *stp_get_config(stp_port_t *p) {
+struct stp_config* stp_get_config(stp_port_t *p) {
 	stp_t *stp = p->stp;
 
 	struct stp_config config;
@@ -240,11 +240,11 @@ static struct stp_config *stp_get_config(stp_port_t *p) {
 	config.hello_time = htons(STP_HELLO_TIME);
 	config.fwd_delay = htons(STP_FWD_DELAY);
 
-	return &config;
+	return (stp_config*)(&config);
 }
 
 /* Write config CONFIG into port P. */
-static void stp_write_config(stp_port_t *p, struct stp_config *config) {
+void stp_write_config(stp_port_t *p, struct stp_config *config) {
 	p->designated_root = ntohll(config->root_id);
 	p->designated_port = ntohs(config->port_id);
 	p->designated_switch = ntohll(config->switch_id);
