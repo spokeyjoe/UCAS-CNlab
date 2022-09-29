@@ -141,8 +141,114 @@ void *stp_timer_routine(void *arg)
 static void stp_handle_config_packet(stp_t *stp, stp_port_t *p,
 		struct stp_config *config)
 {
-	// TODO: handle config packet here
-	fprintf(stdout, "TODO: handle config packet here.\n");
+	if (stp_port_config_cmp(p, config) > 0) { // local port has higher priority
+		stp_port_send_config(p);
+	} else { // neighbor port has higher priority
+		stp_write_config(p, config);
+
+		// reselect RP
+		stp_port_t *tmp = stp->roo;
+		for (int i = 0; i < stp->nports; i++) {
+			stp_port_t *tp = &stp->ports[i];
+			if (!stp_port_is_designated(tp) && (stp_port_cmp(tp, tmp) > 0)) {
+				tmp = tp;
+			}
+		}
+		stp->root_port = tmp;
+		stp->designated_root = config->root_id;
+		stp->root_path_cost = stp->root_port->designated_cost + stp->root_port->path_cost; 
+
+		// update config
+		for (int i = 0; i < stp->nports; i++) {
+			stp_port_t *tp = &stp->ports[i];
+			if (stp_port_is_designated(tp)) {
+				stp_write_config(p, config);
+			} else {
+				struct stp_config new_config;
+				memset(&new_config, 0, sizeof(new_config));
+				new_config.root_id = stp->designated_root;
+				new_config.root_path_cost=stp->root_path_cost;
+				new_config.switch_id = stp->switch_id;
+				new_config.port_id = p->port_id;
+				if (stp_config_cmp(&new_config, stp_get_config(p)) > 0) {
+					stp_write_config(p, &new_config);
+				}
+			}
+		} 
+
+	}
+}
+
+/* Compare priority of CONFIG1 and CONFIG2.
+If config1 > config2, return value > 0. 
+If config1 = config2, return 0.
+If config1 < config2, return value < 0. 
+*/
+static int stp_config_cmp(struct stp_config *config1, struct stp_config *config2)
+{
+
+    // We use unsigned type (as "large" as u64) in comparison, 
+    // therefore type casting is recommended. (Casting to int is unsafe though...) 
+
+	if (config1->root_id != config2->root_id) {
+		return -(int)(config1->root_id - config2->root_id);
+	} else {
+		if (config1->root_path_cost != config2->root_path_cost) {
+			return -(int)(config1->root_path_cost - config2->root_path_cost);
+		} else {
+			if (config1->switch_id != config2->switch_id) {
+				return -(int)(config1->switch_id - config2->switch_id);
+			} else {
+				if (config1->port_id != config2->port_id) {
+					return -(config1->port_id - config2->port_id);
+				} else {
+					return 0;
+				}
+			}
+		}
+	}
+}
+
+/* Compare priority of (the config of) port P & CONFIG. 
+Similar to stp_config_cmp(). */
+static int stp_port_config_cmp(stp_port_t *p, struct stp_config *config2) {
+    stp_config *config1 = stp_get_config(p);
+	return stp_config_cmp(config1, config2);
+}
+
+/* Compare priority of (the config of) port P1 & P2. */
+static int stp_port_cmp(stp_port_t *p1, stp_port_t *p2) {
+	return stp_config_cmp(stp_get_config(p1), stp_get_config(p2));
+}
+
+/* Output config from port P. */
+static struct stp_config *stp_get_config(stp_port_t *p) {
+	stp_t *stp = p->stp;
+
+	struct stp_config config;
+	memset(&config, 0, sizeof(config));
+	config.header.proto_id = htons(STP_PROTOCOL_ID);
+	config.header.version = STP_PROTOCOL_VERSION;
+	config.header.msg_type = STP_TYPE_CONFIG;
+	config.flags = 0;
+	config.root_id = htonll(p->designated_root);
+	config.root_path_cost = htonl(p->designated_cost); 
+	config.switch_id = htonll(p->designated_switch);
+	config.port_id = htons(p->port_id);
+	config.msg_age = htons(0);
+	config.max_age = htons(STP_MAX_AGE);
+	config.hello_time = htons(STP_HELLO_TIME);
+	config.fwd_delay = htons(STP_FWD_DELAY);
+
+	return &config;
+}
+
+/* Write config CONFIG into port P. */
+static void stp_write_config(stp_port_t *p, struct stp_config *config) {
+	p->designated_root = config->root_id;
+	p->designated_port = config->port_id;
+	p->designated_switch = config->switch_id;
+	p->designated_cost = config->root_path_cost;
 }
 
 static void *stp_dump_state(void *arg)
