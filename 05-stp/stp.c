@@ -223,22 +223,13 @@ int stp_port_cmp(stp_port_t *p1, stp_port_t *p2) {
 
 /* Output config from port P. */
 struct stp_config* stp_get_config(stp_port_t *p) {
-	struct stp_config config;
-	memset(&config, 0, sizeof(config));
-	config.header.proto_id = htons(STP_PROTOCOL_ID);
-	config.header.version = STP_PROTOCOL_VERSION;
-	config.header.msg_type = STP_TYPE_CONFIG;
-	config.flags = 0;
-	config.root_id = htonll(p->designated_root);
-	config.root_path_cost = htonl(p->designated_cost); 
-	config.switch_id = htonll(p->designated_switch);
-	config.port_id = htons(p->port_id);
-	config.msg_age = htons(0);
-	config.max_age = htons(STP_MAX_AGE);
-	config.hello_time = htons(STP_HELLO_TIME);
-	config.fwd_delay = htons(STP_FWD_DELAY);
-
-	return (struct stp_config*)(&config);
+	struct stp_config* config = malloc(sizeof(struct stp_config));
+	memset(config, 0, sizeof(struct stp_config));
+	config->root_id = htonll(p->designated_root);
+	config->root_path_cost = htonl(p->designated_cost); 
+	config->switch_id = htonll(p->designated_switch);
+	config->port_id = htons(p->port_id);
+	return config; 
 }
 
 /* Write config CONFIG into port P. */
