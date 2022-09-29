@@ -223,8 +223,6 @@ int stp_port_cmp(stp_port_t *p1, stp_port_t *p2) {
 
 /* Output config from port P. */
 struct stp_config* stp_get_config(stp_port_t *p) {
-	stp_t *stp = p->stp;
-
 	struct stp_config config;
 	memset(&config, 0, sizeof(config));
 	config.header.proto_id = htons(STP_PROTOCOL_ID);
