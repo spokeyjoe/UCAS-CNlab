@@ -245,10 +245,10 @@ static struct stp_config *stp_get_config(stp_port_t *p) {
 
 /* Write config CONFIG into port P. */
 static void stp_write_config(stp_port_t *p, struct stp_config *config) {
-	p->designated_root = config->root_id;
-	p->designated_port = config->port_id;
-	p->designated_switch = config->switch_id;
-	p->designated_cost = config->root_path_cost;
+	p->designated_root = ntohll(config->root_id);
+	p->designated_port = ntohs(config->port_id);
+	p->designated_switch = ntohll(config->switch_id);
+	p->designated_cost = ntohl(config->root_path_cost);
 }
 
 static void *stp_dump_state(void *arg)
