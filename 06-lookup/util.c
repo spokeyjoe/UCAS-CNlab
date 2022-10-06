@@ -7,3 +7,8 @@ long get_interval(struct timeval tv_start,struct timeval tv_end){
     long end_us   = tv_end.tv_sec   * 1000000 + tv_end.tv_usec;
     return end_us - start_us;
 }
+
+// Get the INDEXth bit of 32-bit n
+int get_bit(u_int32_t n, int index) {
+    return (n >> (32 - index - 1)) & 1U;
+}
