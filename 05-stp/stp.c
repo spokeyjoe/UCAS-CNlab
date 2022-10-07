@@ -144,7 +144,7 @@ static void stp_handle_config_packet(stp_t *stp, stp_port_t *p,
 	} else if (stp_port_config_cmp(p, config) > 0) { // local port has higher priority
 		stp_port_send_config(p);
 	} else {										 // neighbor port has higher priority
-		log(DEBUG, "Neighbor port has higher priority");
+		// log(DEBUG, "Neighbor port has higher priority");
 		stp_port_set_config(p, config);
 
 		// reselect RP
@@ -159,7 +159,7 @@ static void stp_handle_config_packet(stp_t *stp, stp_port_t *p,
 		stp->root_port = root_port;
 		stp->designated_root = root_port->designated_root;
 		stp->root_path_cost = stp->root_port->designated_cost + stp->root_port->path_cost; 
-		log(DEBUG, "Update node status:\nRP: %02d\nROOT: %04x\nCOST:%d\n", \
+		// log(DEBUG, "Update node status:\nRP: %02d\nROOT: %04x\nCOST:%d\n", \
 				(int)(root_port->port_id & 0xFF), \
 				(int)(stp->designated_root & 0xFFFF), \
 				stp->root_path_cost);
@@ -170,7 +170,7 @@ static void stp_handle_config_packet(stp_t *stp, stp_port_t *p,
 			if (stp_port_is_designated(tp)) {
 				tp->designated_cost = stp->root_path_cost;
 				tp->designated_root = stp->designated_root;
-				log(DEBUG, "Update port %02d config:\nROOT: %04x\nCOST:%d\n", (int)(tp->port_id & 0xFF), (int)(tp->designated_root & 0xFFFF), tp->designated_cost);
+				// log(DEBUG, "Update port %02d config:\nROOT: %04x\nCOST:%d\n", (int)(tp->port_id & 0xFF), (int)(tp->designated_root & 0xFFFF), tp->designated_cost);
 			} else {
 				struct stp_config new_config;
 				memset(&new_config, 0, sizeof(new_config));

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-trie *t;
+trie t;
 
 // return an array of ip represented by an unsigned integer, size is TEST_SIZE
 uint32_t* read_test_data(const char* lookup_file){
@@ -12,7 +12,7 @@ uint32_t* read_test_data(const char* lookup_file){
     size_t len = 0;
     ssize_t read;
 
-    uint32_t ip_array[TEST_SIZE] = (uint32_t *)malloc(TEST_SIZE * sizeof(uint32_t));
+    uint32_t *ip_array= (uint32_t *)malloc(TEST_SIZE * sizeof(uint32_t));
 
     fp = fopen(lookup_file, "r");
     if (fp == NULL) {
@@ -28,7 +28,7 @@ uint32_t* read_test_data(const char* lookup_file){
         int addr4 = atoi(strtok(NULL, "."));
 
         // shift & catonate
-        ip_array[i++] = (uint32_t)((addr1 << 3*8) | (addr2 << 2*8) | (addr3 << 8) | (addr4));
+        ip_array[i++] = (uint32_t)((addr1 << 24) | (addr2 << 16) | (addr3 << 8) | (addr4));
     }
 
     fclose(fp);
@@ -66,15 +66,18 @@ void create_tree(const char* forward_file){
         int addr4 = atoi(strtok(NULL, "."));
 
         // shift & catonate
-        ip = (uint32_t)((addr1 << 3*8) | (addr2 << 2*8) | (addr3 << 8) | (addr4)); 
-        trie_insert(t, ip, prefix, port);
+        ip = (uint32_t)((addr1 << 24) | (addr2 << 16) | (addr3 << 8) | (addr4)); 
+        trie_insert(&t, ip, prefix, port);
     }
 }
 
 // Look up the ports of ip in file `lookup_file` using the basic tree
 uint32_t *lookup_tree(uint32_t* ip_vec){
-    int port = trie_lookup(t, &ip_vec);
-    return (uint32_t)port;
+    uint32_t *port_list = (uint32_t *)malloc(TEST_SIZE * sizeof(uint32_t));
+    for (int i = 0; i < TEST_SIZE; i += 1) {
+        port_list[i] = (uint32_t)trie_lookup(&t, ip_vec[i]);
+    }
+    return port_list;
 }
 
 // Constructing an advanced trie-tree to lookup according to `forwardingtable_filename`

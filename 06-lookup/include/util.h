@@ -6,5 +6,5 @@
 #include <stdint.h>
 
 long get_interval(struct timeval tv_start,struct timeval tv_end);
-int get_bit(u_int32_t n, int index);
+int get_bit(uint32_t n, int index);
 #endif

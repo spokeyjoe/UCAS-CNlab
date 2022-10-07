@@ -9,6 +9,6 @@ long get_interval(struct timeval tv_start,struct timeval tv_end){
 }
 
 // Get the INDEXth bit of 32-bit n
-int get_bit(u_int32_t n, int index) {
+int get_bit(uint32_t n, int index) {
     return (n >> (32 - index - 1)) & 1U;
 }
