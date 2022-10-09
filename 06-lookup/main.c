@@ -29,9 +29,6 @@ int main(void){
     gettimeofday(&tv_end,NULL);
 
     int basic_pass      = check_result(res1);
-    if (basic_pass == 1) {
-        printf("PASS basic test!\n");
-    }
     long basic_interval = get_interval(tv_start,tv_end);
 
 

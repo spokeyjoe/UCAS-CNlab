@@ -19,7 +19,17 @@ int get_2bit(uint32_t n, int index) {
     return (n >> (32 - 2*index -2)) & 3U;
 }
 
-// Get the first 10 bits of 32-bit n
+// Get the INDEXth 4-bit of 32-bit n 
+int get_4bit(uint32_t n, int index) {
+    return (n >> (32 - 4*index - 4)) & 15U;
+}
+
+// Get the first 6 bits of 32-bit n
 int get_6bit(uint32_t n) {
     return n >> 26;
+}
+
+// Get the first 8 bits of 32-bit n
+int get_8bit(uint32_t n) {
+    return n >> 24;
 }

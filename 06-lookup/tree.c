@@ -5,6 +5,7 @@
 
 trie t;
 ad_trie_head ad_t;
+super_trie_head super_t;
 
 // return an array of ip represented by an unsigned integer, size is TEST_SIZE
 uint32_t* read_test_data(const char* lookup_file){
@@ -110,7 +111,8 @@ void create_tree_advance(const char* forward_file){
 
         // shift & catonate
         ip = (uint32_t)((addr1 << 24) | (addr2 << 16) | (addr3 << 8) | (addr4)); 
-        ad_trie_insert(&ad_t, ip, prefix, port);
+        super_trie_insert(&super_t, ip, prefix, port);
+        // ad_trie_insert(&ad_t, ip, prefix, port);
     }
 }
 
@@ -118,7 +120,8 @@ void create_tree_advance(const char* forward_file){
 uint32_t *lookup_tree_advance(uint32_t* ip_vec){
     uint32_t *port_list = (uint32_t *)malloc(TEST_SIZE * sizeof(uint32_t));
     for (int i = 0; i < TEST_SIZE; i += 1) {
-        port_list[i] = (uint32_t)ad_trie_lookup(&ad_t, ip_vec[i]);
+        port_list[i] = (uint32_t)super_trie_lookup(&super_t, ip_vec[i]);
+        //port_list[i] = (uint32_t)ad_trie_lookup(&ad_t, ip_vec[i]);
     }
     return port_list;
 }

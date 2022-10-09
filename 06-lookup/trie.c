@@ -166,3 +166,74 @@ void ad_trie_insert(ad_trie_head *t, uint32_t ip, int prefix_len, int port) {
         }
     }
 }
+
+/* Look up IP in super trie T, return port number. */
+int super_trie_lookup(super_trie_head *t, uint32_t ip) {
+    super_trie *ptr = t->children[get_8bit(ip)];
+    if (ptr == NULL) {
+        return -1;
+    }
+    int port_candidate = ptr->port;
+
+    // scan from 8-31 bit (2-7 4-bit chunk)
+    for (int i = 2; i < 8; i += 1) {
+        int bits4 = get_4bit(ip, i);
+        ptr = ptr->children[bits4];
+
+        if (ptr == NULL) {
+            break;
+        }
+        if (ptr->port != -1) {
+            port_candidate = ptr->port;
+        }
+    }
+    return port_candidate;
+}
+
+/* Add IP/PREFIX/PORT into super trie T. */
+void super_trie_insert(super_trie_head *t, uint32_t ip, int prefix_len, int port) {
+    super_trie *nxt = t->children[get_8bit(ip)];
+    if (nxt == NULL) {
+        nxt = (super_trie *)malloc(sizeof(super_trie));
+        for (int i = 0; i < 16; i += 1) {
+            nxt->children[i] = NULL;
+        }
+        nxt->port = prefix_len == 8 ? port : -1;
+        t->children[get_8bit(ip)] = nxt;
+    }
+    super_trie *ptr = nxt;
+    // scan 2-7 4-bit chunk
+    for (int i = 2; i < prefix_len / 4; i += 1) {
+        int bits4 = get_4bit(ip, i);
+        nxt = ptr->children[bits4];
+        if (nxt == NULL) {
+            nxt = (super_trie *)malloc(sizeof(super_trie));
+            for (int i = 0; i < 16; i += 1) {
+                nxt->children[i] = NULL;
+            }
+            nxt->port = -1;
+            ptr->children[bits4] = nxt;
+        }
+        // store/overwrite port number anyway
+        if ((i == prefix_len / 4 - 1) && (prefix_len % 4 == 0)) {
+            nxt->port = port;
+            return;
+        }
+        ptr = nxt;
+            
+    }
+    // remaining 1-3 bits: add for all possible children nodes
+    int last_4bits = get_4bit(ip, prefix_len / 4);
+    // length of invalid bits in last_4bits
+    int tail_len = 4 - prefix_len % 4;
+    int index_children_l = (last_4bits >> tail_len) << tail_len;
+    int index_children_r = index_children_l + (1 << tail_len) - 1;
+    for (int i = index_children_l; i < index_children_r + 1; i += 1) {
+        nxt = ptr->children[i];
+        if (nxt == NULL) {
+            nxt = (super_trie *)malloc(sizeof(super_trie));
+            ptr->children[i] = nxt;
+        }
+        nxt->port = port;
+    }
+}

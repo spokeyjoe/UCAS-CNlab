@@ -25,10 +25,24 @@ typedef struct ad_trie {
     struct ad_trie *odd_children[2];
 } ad_trie;
 
+
+/* Super trie node */
+typedef struct super_trie {
+    int port;
+    int valid;
+    struct super_trie *children[16];
+} super_trie;
+
 /* Advanced trie head */
 typedef struct ad_trie_head {
-    struct ad_trie *children[256];     // first 8-bit for fast lookup
+    struct ad_trie *children[128];     // first 6-bit for fast lookup
 } ad_trie_head;
+
+/* Super trie head */
+typedef struct super_trie_head {
+    struct super_trie *children[256];  // first 8-bit for fast lookup
+} super_trie_head;
+
 
 void create_tree(const char*);
 uint32_t *lookup_tree(uint32_t *);
@@ -41,6 +55,8 @@ int trie_lookup(trie *t, uint32_t ip);
 void trie_insert(trie *t, uint32_t ip, int prefix_len, int port);
 int ad_trie_lookup(ad_trie_head *t, uint32_t ip);
 void ad_trie_insert(ad_trie_head *t, uint32_t ip, int prefix_len, int port);
+void super_trie_insert(super_trie_head *t, uint32_t ip, int prefix_len, int port);
+int super_trie_lookup(super_trie_head *t, uint32_t ip);
 
 
 #endif
