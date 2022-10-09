@@ -65,6 +65,7 @@ bool check_result(uint32_t* port_vec){
     for(int i = 0;i < TEST_SIZE;i++){
         fscanf(fp,"%d",&port);
         if(port != port_vec[i]){
+            printf("ERROR in line %d:\nREF PORT:%d\nNOW: %d\n", i+1, port, port_vec[i]);
             fclose(fp);
             return false;
         }

@@ -7,4 +7,8 @@
 
 long get_interval(struct timeval tv_start,struct timeval tv_end);
 int get_bit(uint32_t n, int index);
+int get_2bit(uint32_t n, int index);
+int get_6bit(uint32_t n);
+
+
 #endif
