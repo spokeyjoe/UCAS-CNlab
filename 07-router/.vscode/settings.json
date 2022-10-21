@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "arp.h": "c",
+        "arpcache.h": "c"
+    }
+}
