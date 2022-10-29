@@ -5,7 +5,7 @@ all: $(TARGET)
 CC = gcc
 LD = gcc
 
-CFLAGS = -g -Wall -Iinclude
+CFLAGS = -g -Wall -Iinclude -Wno-address-of-packed-member
 LDFLAGS = -L.
 
 LIBS = -lipstack -lpthread

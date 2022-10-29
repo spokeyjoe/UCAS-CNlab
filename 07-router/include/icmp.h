@@ -5,6 +5,8 @@
 #include "checksum.h"
 #include "base.h"
 
+#include <string.h>
+
 struct icmphdr {
 	u8	type;
 	u8	code;

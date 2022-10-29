@@ -100,6 +100,7 @@ int main(int argc, const char **argv)
 
 	init_rtable();
 	load_rtable_from_kernel();
+	print_rtable();
 
 	ustack_run();
 

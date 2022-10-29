@@ -2,6 +2,7 @@
 #include "arp.h"
 #include "ether.h"
 #include "icmp.h"
+#include "log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,7 +56,8 @@ int arpcache_lookup(u32 ip4, u8 mac[ETH_ALEN])
 	pthread_mutex_lock(&arpcache.lock);
 	for (int i = 0; i < MAX_ARP_SIZE; i += 1) {
 		struct arp_cache_entry entry = arpcache.entries[i];
-		if (entry.valid != 0 && entry.ip4 == ip4 && memcmp(entry.mac, mac, ETH_ALEN) == 0) {
+		if (entry.valid != 0 && entry.ip4 == ip4) {
+			memcpy(mac, entry.mac, ETH_ALEN);
 			pthread_mutex_unlock(&arpcache.lock);
 			return 1;
 		}
@@ -181,14 +183,15 @@ void *arpcache_sweep(void *arg)
 		list_for_each_entry_safe(p, q, &arpcache.req_list, list) {
 			if (p->retries < ARP_REQUEST_MAX_RETRIES) {
 				if (cur - p->sent >= 1) {
+					// log(DEBUG, "retry sending ARP request for entry, ip4=%x\n", p->ip4);
 					p->retries += 1;
 					p->sent = cur;
 					arp_send_request(p->iface, p->ip4);
 				}
 			} else {
 				// add to unreachable list
-				list_add_tail(&p->list, &unreachables);
 				list_delete_entry(&p->list);
+				list_add_tail(&p->list, &unreachables);
 			}
 		}
 
@@ -197,7 +200,7 @@ void *arpcache_sweep(void *arg)
 		list_for_each_entry_safe(p, q, &unreachables, list) {
 			struct cached_pkt *p_pkt, *q_pkt;
 			list_for_each_entry_safe(p_pkt, q_pkt, &p->cached_packets, list) {
-				icmp_send_packet(p_pkt->packet, p_pkt->len, ICMP_DEST_UNREACH, ICMP_NET_UNREACH);
+				icmp_send_packet(p_pkt->packet, p_pkt->len, ICMP_DEST_UNREACH, ICMP_HOST_UNREACH);
 				list_delete_entry(&p_pkt->list);
 				free(p_pkt->packet);
 				free(p_pkt);
