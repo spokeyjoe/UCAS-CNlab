@@ -18,5 +18,7 @@ typedef struct {
 } mospf_db_entry_t;
 
 void init_mospf_db();
+void update_rtable();
+void print_mospf_db();
 
 #endif

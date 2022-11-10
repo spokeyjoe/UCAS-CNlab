@@ -44,9 +44,9 @@ typedef struct {
 
 void arpcache_init();
 void arpcache_destroy();
+void *arpcache_sweep(void *);
 
 int arpcache_lookup(u32 ip4, u8 mac[]);
 void arpcache_insert(u32 ip4, u8 mac[]);
 void arpcache_append_packet(iface_info_t *iface, u32 ip4, char *packet, int len);
-
 #endif

@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "mospf_daemon.h": "c",
+        "mospf_database.h": "c",
+        "ip.h": "c",
+        "log.h": "c"
+    }
+}
