@@ -130,9 +130,9 @@ void *checking_database_thread(void *param)
             }
         }
         
-		// print_mospf_db();
-		calculate_rtable();
-		print_rtable();
+        // print_mospf_db();
+        calculate_rtable();
+        print_rtable();
 
         pthread_mutex_unlock(&mospf_lock);
         sleep(1);
@@ -162,17 +162,17 @@ void calculate_rtable()
     memset(graph, 0, sizeof(graph));
     list_for_each_entry(n, &mospf_db, list) {
         for (int i = 0; i < n->nadv; i += 1) {
-			if (n->array[i].rid != 0) {
-				int index_n = rid2index(n->rid, rid_table, num_nodes);
-				int index_m = rid2index(n->array[i].rid, rid_table, num_nodes);
-				// if node is not in the database, ignore it
-				if (index_n == -1 || index_m == -1) {
-					// log(DEBUG, "rid not found");
-					break;
-				}
-            	graph[index_n][index_m] = 1;
-				graph[index_m][index_n] = 1;
-			}
+            if (n->array[i].rid != 0) {
+                int index_n = rid2index(n->rid, rid_table, num_nodes);
+                int index_m = rid2index(n->array[i].rid, rid_table, num_nodes);
+                // if node is not in the database, ignore it
+                if (index_n == -1 || index_m == -1) {
+                    // log(DEBUG, "rid not found");
+                    break;
+                }
+                graph[index_n][index_m] = 1;
+                graph[index_m][index_n] = 1;
+            }
         }
     }
     iface_info_t *iface;
@@ -183,68 +183,68 @@ void calculate_rtable()
         }
     }
 
-	// dijkstra
+    // dijkstra
     int dist[num_nodes];
     int visited[num_nodes];
     int prev[num_nodes];
     dijkstra(0, num_nodes, visited, dist, prev, graph);
 
-	// update router table
-	clear_rtable();
-	load_rtable_from_kernel();
+    // update router table
+    clear_rtable();
+    load_rtable_from_kernel();
 
-	list_for_each_entry(n, &mospf_db, list) {
-		for (int i = 0; i < n->nadv; i += 1) {
-			struct mospf_lsa *nbr = &n->array[i];
-			u32 network = nbr->network;
-			u32 mask = nbr->mask;
+    list_for_each_entry(n, &mospf_db, list) {
+        for (int i = 0; i < n->nadv; i += 1) {
+            struct mospf_lsa *nbr = &n->array[i];
+            u32 network = nbr->network;
+            u32 mask = nbr->mask;
 
-			// lookup routing table
-			rt_entry_t *r;
-			int entry_exist = 0;
-			list_for_each_entry(r, &rtable, list) {
-				if ((r->dest & r->mask) == (network & mask)) {
-					entry_exist = 1;
-					break;
-				}
-			}
-			if (entry_exist == 1) {
-				continue;
-			}
+            // lookup routing table
+            rt_entry_t *r;
+            int entry_exist = 0;
+            list_for_each_entry(r, &rtable, list) {
+                if ((r->dest & r->mask) == (network & mask)) {
+                    entry_exist = 1;
+                    break;
+                }
+            }
+            if (entry_exist == 1) {
+                continue;
+            }
 
-			// add routing entry to this network
-			int prev_idx = rid2index(nbr->rid == 0? n->rid : nbr->rid, rid_table, num_nodes);
-			if (prev_idx == -1) {
-				continue;
-			}
-			while(dist[prev_idx] > 1 && prev[prev_idx] != -1) {
-				prev_idx = prev[prev_idx];
-			}
+            // add routing entry to this network
+            int prev_idx = rid2index(nbr->rid == 0? n->rid : nbr->rid, rid_table, num_nodes);
+            if (prev_idx == -1) {
+                continue;
+            }
+            while(dist[prev_idx] > 1 && prev[prev_idx] != -1) {
+                prev_idx = prev[prev_idx];
+            }
 
-			u32 nxt_hop = rid_table[prev_idx];
+            u32 nxt_hop = rid_table[prev_idx];
 
-			// find port to next hop
-			int found = 0;
-			mospf_nbr_t *nb;
-			list_for_each_entry(iface, &instance->iface_list, list) {
-				list_for_each_entry(nb, &iface->nbr_list, list) {
-					if (nb->nbr_id == nxt_hop) {
-						found = 1;
-						break;
-					}
-				}
-				if (found) {
-					break;
-				}
-			}
-			if (found == 0) {
-				continue;
-			}
+            // find port to next hop
+            int found = 0;
+            mospf_nbr_t *nb;
+            list_for_each_entry(iface, &instance->iface_list, list) {
+                list_for_each_entry(nb, &iface->nbr_list, list) {
+                    if (nb->nbr_id == nxt_hop) {
+                        found = 1;
+                        break;
+                    }
+                }
+                if (found) {
+                    break;
+                }
+            }
+            if (found == 0) {
+                continue;
+            }
 
-			rt_entry_t *new_entry = new_rt_entry(network, mask, nb->nbr_ip, iface);
-			add_rt_entry(new_entry);
-		}
-	}
+            rt_entry_t *new_entry = new_rt_entry(network, mask, nb->nbr_ip, iface);
+            add_rt_entry(new_entry);
+        }
+    }
 }
 
 void dijkstra(int src, int n, int *visited, int *dist, int *prev, int graph[n][n]) {
@@ -281,7 +281,7 @@ int rid2index(u32 rid, int *rid_table, int num_nodes) {
             return i;
         }
     }
-	return -1;
+    return -1;
 }
 
 void handle_mospf_hello(iface_info_t *iface, const char *packet, int len)
