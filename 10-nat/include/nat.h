@@ -71,5 +71,6 @@ struct dnat_rule {
 void nat_init(const char *config_file);
 void nat_exit();
 void nat_translate_packet(iface_info_t *iface, char *packet, int len);
+u16 assign_external_port();
 
 #endif

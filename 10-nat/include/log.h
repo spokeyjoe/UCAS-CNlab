@@ -29,4 +29,8 @@ static const char *log_level_str[] = { "DEBUG", "INFO", "WARNING", "ERROR" };
 		log_it(fmt, log_level_str[level], ##__VA_ARGS__); \
 	} while (0)
 
+static inline void logaddr(char *name, u32 addr) {
+    log(DEBUG, "%s: %d.%d.%d.%d\n", name, addr>>24, (addr<<8)>>24, (addr<<16)>>24, (addr<<24)>>24);	
+}
+
 #endif
