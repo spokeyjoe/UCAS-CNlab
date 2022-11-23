@@ -15,6 +15,9 @@
 
 #define TCP_ESTABLISHED_TIMEOUT	60		// if the tcp connection does not transmit any packet 
                                         // in 60 seconds, it is regarded as finished
+#define IN_IFACE_STRING "internal-iface"
+#define EX_IFACE_STRING "external-iface"
+#define DNAT_RULES_STRING "dnat-rules"
 
 // DIR_IN is direction that packet from public network to private network, 
 // DIR_OUT is direction that packet from private network to public network

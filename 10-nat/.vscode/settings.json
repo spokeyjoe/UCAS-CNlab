@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "nat.h": "c"
+        "nat.h": "c",
+        "ip.h": "c",
+        "rtable.h": "c"
     }
 }
