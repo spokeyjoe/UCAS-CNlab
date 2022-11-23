@@ -54,8 +54,8 @@ void ip_send_packet(char *packet, int len)
 	rt_entry_t *entry = longest_prefix_match(daddr);
 	if (entry == NULL) {
 		log(ERROR, "no entry found in routing table");
-		logaddr("daddr:", daddr);
-		logaddr("net-daddr:", ip_hdr->daddr);
+		free(packet);
+		return;
 	} else {
 		ip_hdr->saddr = ntohl(entry->iface->ip);
 		ip_hdr->checksum = ip_checksum(ip_hdr);
