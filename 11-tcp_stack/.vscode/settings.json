@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "tcp.h": "c",
+        "__locale": "c",
+        "atomic": "c",
+        "cstdlib": "c",
+        "locale": "c",
+        "new": "c",
+        "ostream": "c",
+        "typeinfo": "c",
+        "algorithm": "c",
+        "complex": "c"
+    }
+}
