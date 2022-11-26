@@ -1,9 +1,11 @@
-#!/usr/bin/python2
+#!/usr/bin/python
 
 import sys
 import string
 import socket
 from time import sleep
+
+data = string.digits + string.lowercase + string.uppercase
 
 def server(port):
     s = socket.socket()
@@ -13,38 +15,34 @@ def server(port):
     s.listen(3)
     
     cs, addr = s.accept()
-    #print addr
+    print addr
 
-    filename = 'server-output.dat'
-    fp = open(filename, 'a')
+    f = open('server-output.dat', 'wb')
     
     while True:
         data = cs.recv(1000)
-        if data:
-            fp.write(data)
-        else:
+        print len(data)
+        f.write(data)
+        if len(data) == 0:
             break
     
-    fp.close()
+    f.close()
     s.close()
 
 
 def client(ip, port):
     s = socket.socket()
     s.connect((ip, int(port)))
+    f = open('client-input.dat', 'r')
+    str = f.read()
+    length = len(str)
+    i = 0
+    
+    while length > 0:
+        s.send(str[i:i+1000])
+        length -= 1000
 
-    filename = 'client-input.dat'
-    fp = open(filename, 'r')
-    
-    while True:
-        data = fp.read(1000)
-        if(data != ''):
-            s.send(data)
-            sleep(0.001)
-        else:
-            break
-    
-    fp.close()
+    f.close()
     s.close()
 
 if __name__ == '__main__':

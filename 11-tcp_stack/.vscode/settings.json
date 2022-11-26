@@ -9,6 +9,7 @@
         "ostream": "c",
         "typeinfo": "c",
         "algorithm": "c",
-        "complex": "c"
+        "complex": "c",
+        "tcp_sock.h": "c"
     }
 }

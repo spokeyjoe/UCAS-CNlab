@@ -94,7 +94,6 @@ void *tcp_client(void *arg)
 		if (tcp_sock_write(tsk, wbuf, read_byte) < 0){
 			log(ERROR,"read error");
 		}
-		usleep(1000);
 	}
 
 

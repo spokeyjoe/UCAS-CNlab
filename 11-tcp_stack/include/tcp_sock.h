@@ -70,7 +70,8 @@ struct tcp_sock {
 	// synch waiting structure of *connect*, *accept*, *recv*, and *send*
 	struct synch_wait *wait_connect;
 	struct synch_wait *wait_accept;
-	struct synch_wait *wait_recv;
+	struct synch_wait *wait_empty;
+	struct synch_wait *wait_full;
 	struct synch_wait *wait_send;
 
 	// receiving buffer
@@ -79,6 +80,9 @@ struct tcp_sock {
 	struct list_head send_buf;
 	// used to pend out-of-order packets
 	struct list_head rcv_ofo_buf;
+
+	// lock for receiving buffer
+	pthread_mutex_t rcv_buf_lock;
 
 	// tcp state, see enum tcp_state in tcp.h
 	int state;
@@ -134,6 +138,7 @@ void tcp_send_packet(struct tcp_sock *tsk, char *packet, int len);
 int tcp_send_data(struct tcp_sock *tsk, char *buf, int len);
 
 void tcp_process(struct tcp_sock *tsk, struct tcp_cb *cb, char *packet);
+struct tcp_sock *alloc_child_tcp_sock(struct tcp_sock *tsk, struct tcp_cb *cb);
 
 void init_tcp_stack();
 

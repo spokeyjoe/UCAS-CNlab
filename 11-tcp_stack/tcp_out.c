@@ -80,13 +80,13 @@ void tcp_send_control_packet(struct tcp_sock *tsk, u8 flags)
 	ip_init_hdr(ip, tsk->sk_sip, tsk->sk_dip, tot_len, IPPROTO_TCP);
 	tcp_init_hdr(tcp, tsk->sk_sport, tsk->sk_dport, tsk->snd_nxt, \
 			tsk->rcv_nxt, flags, tsk->rcv_wnd);
-
 	tcp->checksum = tcp_checksum(ip, tcp);
 
 	if (flags & (TCP_SYN|TCP_FIN))
 		tsk->snd_nxt += 1;
 
 	ip_send_packet(packet, pkt_size);
+	// log(DEBUG, "send packet, flags:%d", flags);
 }
 
 // send tcp reset packet

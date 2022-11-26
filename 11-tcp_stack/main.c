@@ -114,6 +114,7 @@ static void run_application(const char *basename, char **args, int n)
 
 int main(int argc, char **argv)
 {
+	setbuf(stdout,NULL);
 	if (getuid() && geteuid()) {
 		fprintf(stderr, "Permission denied, should be superuser!\n");
 		exit(1);

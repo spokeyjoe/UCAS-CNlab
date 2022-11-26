@@ -57,38 +57,69 @@ void tcp_process(struct tcp_sock *tsk, struct tcp_cb *cb, char *packet)
 
     switch (tsk->state) {
     case TCP_LISTEN:
-        if (cb->flags & TCP_SYN) {
+        if (cb->flags == TCP_SYN) {
             struct tcp_sock *csk = alloc_child_tcp_sock(tsk, cb);
             tcp_send_control_packet(csk, TCP_SYN | TCP_ACK);
-            tcp_set_state(tsk, TCP_SYN_RECV);
+            tcp_set_state(csk, TCP_SYN_RECV);
         }
         break;
     case TCP_SYN_SENT:
-        if (cb->flags & TCP_ACK) {
-            wake_up(tsk->wait_connect);
+        if (cb->flags == (TCP_SYN | TCP_ACK)) {
+            tcp_update_window_safe(tsk, cb);
             tcp_send_control_packet(tsk, TCP_ACK);
             tcp_set_state(tsk, TCP_ESTABLISHED);
+            wake_up(tsk->wait_connect);
         }
         break;
     case TCP_SYN_RECV:
-        if (cb->flags & TCP_ACK) {
-			if (tcp_sock_accept_queue_full(tsk) != 0) {
-            	tcp_sock_accept_enqueue(tsk);
-			}
-            // wake up tcp_sock_accept()
-            wake_up(tsk->wait_connect);
+        if (cb->flags == TCP_ACK) {
+            tcp_sock_accept_enqueue(tsk);
             tcp_set_state(tsk, TCP_ESTABLISHED);
+            wake_up(tsk->wait_accept);
         }
         break;
     case TCP_ESTABLISHED:
         if (cb->flags & TCP_FIN) {
             tcp_send_control_packet(tsk, TCP_ACK);
             tcp_set_state(tsk, TCP_CLOSE_WAIT);
+            if (tsk->wait_empty->sleep) {
+                wake_up(tsk->wait_empty);
+            }
+        }
+        
+        if (cb->flags & TCP_ACK) {
+            tcp_update_window_safe(tsk, cb);
+
+            if (cb->pl_len != 0) {
+                pthread_mutex_lock(&tsk->rcv_buf_lock);
+
+                while (ring_buffer_free(tsk->rcv_buf) < cb->pl_len) {
+                    // log(DEBUG, "STATE_MACHINE: ring buffer not enough for receiving packet, go to sleep");
+                    pthread_mutex_unlock(&tsk->rcv_buf_lock);
+                    sleep_on(tsk->wait_full);
+                    pthread_mutex_lock(&tsk->rcv_buf_lock);
+                    // log(DEBUG, "STATE_MACHINE: ring buffer not full, wake up to see if i can receive packet");
+                }
+
+                write_ring_buffer(tsk->rcv_buf, cb->payload, cb->pl_len);
+                tsk->rcv_wnd = ring_buffer_free(tsk->rcv_buf);
+                
+                pthread_mutex_unlock(&tsk->rcv_buf_lock);
+
+                if (tsk->wait_empty->sleep) {
+                    wake_up(tsk->wait_empty);
+                }
+                tcp_send_control_packet(tsk, TCP_ACK);
+            }
         }
         break;
     case TCP_FIN_WAIT_1:
-        if (cb->flags & TCP_ACK) {
+        if (cb->flags == TCP_ACK) {
             tcp_set_state(tsk, TCP_FIN_WAIT_2);
+        } else if (cb->flags == (TCP_ACK | TCP_FIN)) {
+            tcp_send_control_packet(tsk, TCP_ACK);
+            tcp_set_state(tsk, TCP_TIME_WAIT);
+            tcp_set_timewait_timer(tsk);
         }
         break;
     case TCP_FIN_WAIT_2:
@@ -102,7 +133,6 @@ void tcp_process(struct tcp_sock *tsk, struct tcp_cb *cb, char *packet)
         if (cb->flags & TCP_ACK) {
             tcp_unhash(tsk);
             tcp_set_state(tsk, TCP_CLOSED);
-			// FIXME: delete from parent?
         }
         break;
     default:
@@ -116,11 +146,11 @@ struct tcp_sock *alloc_child_tcp_sock(struct tcp_sock *tsk, struct tcp_cb *cb) {
     memcpy((char *)csk, (char *)tsk, sizeof(struct tcp_sock));
     csk->parent = tsk;
     csk->sk_sip = cb->daddr;
-    csk->sk_port = cb->dport;
+    csk->sk_sport = cb->dport;
     csk->sk_dip = cb->saddr;
     csk->sk_dport = cb->sport;
     csk->iss = tcp_new_iss();
-    csk->rcv_nxt = cb->seq;
+    csk->rcv_nxt = cb->seq_end;
     csk->snd_nxt = csk->iss;
 
     struct sock_addr *sa = malloc(sizeof(struct sock_addr));
