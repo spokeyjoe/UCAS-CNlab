@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "tcp_sock.h": "c",
+        "tcp_buffer.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
+}
